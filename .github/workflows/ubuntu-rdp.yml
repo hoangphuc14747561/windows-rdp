@@ -1,0 +1,45 @@
+name: Ubuntu Desktop RDP Free
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9999
+
+    steps:
+    - name: Cập nhật hệ thống
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xfce4 xfce4-goodies xrdp wget unzip curl
+
+    - name: Cài Chrome & Firefox
+      run: |
+        # Cài Firefox
+        sudo apt-get install -y firefox
+        # Cài Google Chrome
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+
+    - name: Cấu hình XRDP
+      run: |
+        sudo systemctl enable xrdp
+        sudo systemctl start xrdp
+        echo "runner:123456" | sudo chpasswd
+        echo "✅ User: runner | Pass: 123456"
+
+    - name: Cài ngrok
+      run: |
+        wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+        tar -xvzf ngrok-v3-stable-linux-amd64.tgz
+        sudo mv ngrok /usr/local/bin
+
+        # Đăng ký key của bạn
+        ngrok config add-authtoken 2vZSeqhuM2mKPx7XAP9JgnUn6fO_2r1tgs64MYMgkeTNCjPdu
+
+    - name: Chạy ngrok TCP 3389 (RDP)
+      run: |
+        nohup ngrok tcp 3389 &>/dev/null &
+        sleep 5
+        curl -s localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url'
